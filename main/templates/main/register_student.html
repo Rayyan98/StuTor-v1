@@ -1,0 +1,22 @@
+{% extends 'main/header.html'%}
+
+{% block content %}
+
+	<form method = "POST">
+		{% csrf_token %}
+		{{form2.as_p}}
+		{{form3.as_p}}
+		<label>
+			<input type="checkbox" class="filled-in" />
+			<span>I am over 18 years old</span>
+		</label>
+		<br />
+		<br />
+		Please fill guardian information if you are not over 18 years old
+		{{form4.as_p}}
+		<button class='btn' style = 'background-color:yellow; color:blue'  type = 'submit'>register</button>
+	</form>
+
+	If you already have an account, <a href ='/login'><strong>login</strong></a> instead.
+	
+{% endblock %}

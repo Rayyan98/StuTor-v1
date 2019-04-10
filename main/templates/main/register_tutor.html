@@ -1,0 +1,59 @@
+{% extends 'main/header.html'%}
+
+{% block content %}
+
+	<form method = "POST" enctype="multipart/form-data">
+		{% csrf_token %}
+		<!--		
+		{{form1.as_p}}
+		{{form2.as_p}}
+		{{form3.as_p}}
+		{{form4.as_p}}
+		
+
+		{% for i in form5 %}
+			{{i.as_p}}
+		{% endfor %}
+		
+	  <button class='btn' style = 'background-color:yellow; color:blue' name = "AddSubject" type = 'submit'>Add More Subjects</button>
+		<br />
+		-->
+		<br />
+		Check which of the days you can spare to teach also specify time for each of them. You can also add others or change these later but muust specify atleast one slot now
+
+		<br />
+		{% for i in Days %}
+		  <p>
+		  <label>
+			<input type="checkbox" id = {{i.Name}} class="filled-in"  name= "Dayss"
+			value={{i.Name}} >
+			<span>{{i.Name}}</span>
+		  </label>
+		  </p>
+		  
+		  <p>
+		  <label>Time Start</label>
+		  <input type="text" name={{i.Name}}TimeStart class="timepicker">
+		  </p>
+
+		  <p>
+		  <label>Time End </label>
+		  <input type="text" class="timepicker" name = {{i.Name}}TimeEnd>
+		  </p>
+		{% endfor %}
+		
+
+      <label>
+        <input type="checkbox"  class="filled-in"  name= "AgeCheckNewBroker"/>
+		<span>I am over 18 years old</span>
+      </label>
+	  <br />
+	  <br />
+	  <br />
+		<button class='btn' style = 'background-color:yellow; color:blue'  type = 'submit'>register</button>
+
+	</form>
+
+	If you already have an account, <a href ='/login'><strong>login</strong></a> instead.
+	
+{% endblock %}
