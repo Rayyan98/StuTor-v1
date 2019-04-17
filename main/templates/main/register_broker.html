@@ -1,20 +1,30 @@
 {% extends 'main/header.html'%}
 
+{% load crispy_forms_tags %}
+
 {% block content %}
 
 	<form method = "POST" enctype="multipart/form-data">
 		{% csrf_token %}
-		{{form2.as_p}}
-		{{form4.as_p}}
-		{{form3.as_p}}
+		{{form2|crispy}}
+		{{form4|crispy}}
+		{{form3|crispy}}
+		<div class="custom-control custom-checkbox">
+			<input type="checkbox" class="custom-control-input" id="defaultUnchecked" name= "AgeCheckNewBroker">
+			<label class="custom-control-label" for="defaultUnchecked">I am over 18 years old</label>
+		</div>
+
+<!-- Old code for refrence purposes
+
       <label>
         <input type="checkbox" class="filled-in"  name= "AgeCheckNewBroker"/>
         <span>I am over 18 years old</span>
       </label>
-	  <br />
-	  <br />
-		<button class='btn' style = 'background-color:yellow; color:blue'  type = 'submit'>register</button>
+-->
+		<br />
+		<button class='btn' style = 'background-color:blue; color:white'  type = 'submit'>register</button>
 	</form>
+	  <br />
 
 	If you already have an account, <a href ='/login'><strong>login</strong></a> instead.
 	

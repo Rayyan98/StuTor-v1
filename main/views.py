@@ -1,100 +1,162 @@
 from datetime import datetime, timedelta
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from .forms import NewPersonForm, NewMyUserForm, NewUserForm, NewBrokerForm, NewTutorForm, NewTutorTimmingForm, NewTutorSubjectForm
+from .forms import NewPersonForm, NewMyUserForm, NewUserForm, NewBrokerForm, NewTutorForm, 			NewTutorTimmingForm, NewTutorSubjectForm, NewStudentForm, NewGuardianForm, PasswordChange
 from django.contrib.auth.forms import  AuthenticationForm
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login,logout,authenticate
-from .models import Person, CUser, Broker, Student , MyUser, Day, Qualification, Timming, Tutor, Subject, Board, TutorSubjects
+from .models import Person, CUser, Broker, Student , MyUser, Day, Qualification, Timming, Tutor, 		Subject, Board, TutorSubjects
 from django.contrib.auth.models import User
 
 
 # Create your views here.
 
-def homepage(request):
-	return render(request, 
-					'main/home.html')
-		
-		
-def register_tutor(request):
-	revert = False
-	if(request.method == "POST"):
-		if False:
-			pass
-		elif not request.POST.getlist('Dayss'):
-			messages.error(request , "Please specify atleast one day and time slot")
-			revert = True
+############################################################################
+##########--------------Tutor Registration---------------------------#######
+
+
+def get_tutor_times(request):
+	if not request.POST.getlist('Dayss'):
+		messages.error(request , "Please specify atleast one day and time slot")
+		return False
+	Times = []
+	days = request.POST.getlist('Dayss')
+	for i in days:
+		t1 = request.POST.get(i+'TimeStart')
+		t2 = request.POST.get(i+'TimeEnd')
+		if(t1 == ""):
+			messages.error(request, "Start time is missing somewhere")
+			return False
+		elif(t2 == ""):
+			messages.error(request, "End time is missing somewhere")
+			return False
 		else:
-			Times = []
-			for i in request.POST.getlist('Dayss'):
-				t1 = request.POST.get(i+'TimeStart')
-				t2 = request.POST.get(i+'TimeEnd')
-				if(t1 == ""):
-					messages.error(request, "Start time is missing somewhere")
-					revert = True
-					break
-				elif(t2 == ""):
-					messages.error(request, "End time is missing somewhere")
-					revert = True
-					break
-				else:
-					t1 = datetime.strptime(t1, '%I:%M %p')
-					t2 = datetime.strptime(t2, '%I:%M %p')
-					if t2 - t1 < timedelta(hours = 1):
-						messages.error(request, "End Time must be 1 hour ahead of Start Time")
-						revert = True
-						break
-					else:
-						messages.info(request, "Add code")
-			
-	if(revert):
-		form1 = NewPersonForm
-		form2 = NewMyUserForm
-		form3 = NewUserForm
-		form4 = NewTutorForm
-		form5 = NewTutorSubjectForm
-		form6 = NewTutorTimmingForm
-		Days = Day.objects.all()
-		return render(request,
-						'main/register_tutor.html',
-						context = {'form1':form1, 'form2': form2, 'form3':form3,
-									'form4':form4, 'form5':form5, 'form6': form6,
-									'Days':Days}
-						)
+			try:
+				t1 = datetime.strptime(t1, '%H %p')
+				t2 = datetime.strptime(t2, '%H %p')
+			except:
+				messages.error(request, "Please use the time widget oversmart")
+				return False
+			if t2 - t1 < timedelta(hours = 1):
+				messages.error(request, "End Time must be 1 hour ahead of Start Time")
+				return False
+			else:
+				t1 = t1.time()
+				t2 = t2.time()
+				Times.append(t1)
+				Times.append(t2)
+	return (days, Times)
+
+
+	
+def get_tutor_subjects(request):
+	g = request.POST.getlist('select')
+	s = request.POST.getlist('select2')
+	if not g:
+		messages.error(request, "Please select atleast one general subject")
+		return False
+	if not s:
+		messages.error(request, "Please select atleast one specific subject")
+		return False
+	g.extend(s)
+	return g
+
+
+
+def render_tutor_registration(request, revert = False):
+	if(revert):	
+		form1 = NewPersonForm(request.POST)
+		form2 = NewMyUserForm(request.POST)
+		form3 = NewUserForm(request.POST)
+		form4 = NewTutorForm(request.POST)
 	else:
 		form1 = NewPersonForm
 		form2 = NewMyUserForm
 		form3 = NewUserForm
 		form4 = NewTutorForm
-		form5 = NewTutorSubjectForm
-		form6 = NewTutorTimmingForm
-		Days = Day.objects.all()
-		return render(request,
-						'main/register_tutor.html',
-						context = {'form1':form1, 'form2': form2, 'form3':form3,
-									'form4':form4, 'form5':form5, 'form6': form6,
-									'Days':Days}
-						)
+
+	form1.field_order = ['CNIC', 'FullName', 'Phone']
+	form3.field_order = ['email', 'username', 'password1', 'password2']
+	form4.field_order = ['Highest_Qualification', 'Degree_Name', 'Institution',
+							'Degree_Image']
+	Days = Day.objects.all()
+	General_Subjects = [i for i in Subject.objects.filter(Board__Name = 'Independent')]
+	Specific_Subjects = [i for i in Subject.objects.all().exclude(Board__Name = 'Independent')]
+	return render(request,
+					'main/register_tutor.html',
+					context = {'form1':form1, 'form2': form2, 'form3':form3,
+								'form4':form4, 'Days':Days, 'General_Subjects':General_Subjects,
+								'Specific_Subjects':Specific_Subjects,
+								}
+					)
+
+
+		
+def register_tutor(request):
+	if request.user.is_authenticated:
+		return redirect("main:homepage")
+		
+	revert = False
+	if(request.method == "POST"):
+		newpersonform = NewPersonForm(request.POST)
+		newmyuserform = NewMyUserForm(request.POST, request.FILES)
+		newuserform = NewUserForm(request.POST)
+		newtutorform = NewTutorForm(request.POST, request.FILES)
+		times = get_tutor_times(request)
+		all_subjects = get_tutor_subjects(request)
+		if newpersonform.is_valid() == False:
+			messages.error(request, "Phone number is already registered")
+			revert = True
+		elif newmyuserform.is_valid() == False:
+			messages.error(request, "Image may not be present or is weird")
+			revert = True
+		elif (newuserform.is_valid() == False):
+			messages.error(request, "Username taken or password mismatch")
+			revert = True				
+		elif newtutorform.is_valid() == False:
+			messages.error(request, "Something wrong in degree details")
+			revert = True						
+		elif newuserform.IsEmailPresent():
+			messages.error(request, 'Email is already registered')
+			revert = True
+		elif newpersonform.DoesCnicHaveAccount():
+			messages.error(request, 'This CNIC already owned by account')
+			revert = True
+		elif newpersonform.DoesNumberHaveAccount():
+			messages.error(request, 'This Phone number is already owned by account')
+			revert = True
+		elif request.POST.get('AgeCheckNewTutor') != "on":
+			messages.warning(request, "Please certify that you are 18 years old or over")
+			revert = True			
+		elif not times:
+			messages.info(request, "Please check your specidifed times")	
+			revert = True
+		elif not all_subjects:
+			messages.info(request, "Please check subject specifications")
+			revert = True
+		else:
+			newperson = newpersonform.SaveNewPerson()
+			newuser  = newuserform.SaveNewUser(True)
+			newmyuser = newmyuserform.SaveNewMyUser(newperson, newuser, "Pending", "Tutor")
+			newtutor = newtutorform.SaveNewTutor(newmyuser)
+			newtutorform.AddTutorSubjects(newtutor, all_subjects)
+			newtutorform.AddTutorTimmings(newtutor, times[0], times[1])
+			messages.success(request, "You have been registered successfully")
+			return redirect("main:register_successful")
+			
+	return render_tutor_registration(request, revert)
 
 
 
-def register_student(request):
-	form2 = NewPersonForm
-	form2.field_order = ['CNIC', 'FullName', 'Phone']
-	form3 = NewMyUserForm
-	form3.field_order = ['Email', 'Pic', 'username', 'password1', 'password2']
-	form4 = NewPersonForm
-	form4.field_order = ['CNIC', 'FullName', 'Phone']	
-	return render(request, 
-				  'main/register_student.html',
-				  context={'form2':form2,'form3':form3,'form4':form4})
+##########################################################################
+##########--------------Broker Registration------------------------#######
 
 
-
-
-				 
 def register_broker(request):
+	if request.user.is_authenticated:
+		return redirect("main:homepage")
+		
 	revert = False
 
 	if request.method == "POST":
@@ -117,6 +179,9 @@ def register_broker(request):
 			revert = True
 		elif person_form.DoesCnicHaveAccount():
 			messages.error(request, 'This CNIC already owned by account')
+			revert = True
+		elif person_form.DoesNumberHaveAccount():
+			messages.error(request, 'This Phone number is already owned by account')
 			revert = True
 		elif request.POST.get('AgeCheckNewBroker') != "on":
 			messages.warning(request, "Please certify that you are 18 years old or over")
@@ -141,13 +206,104 @@ def register_broker(request):
 		form2.field_order = ['CNIC', 'FullName', 'Phone']
 		form4 = NewMyUserForm
 		form3 = NewUserForm
-		form3.field_order = ['username', 'password1', 'password2', 'email']
+		form3.field_order = [ 'email', 'username', 'password1', 'password2',]
 		return render(request, 
 					  'main/register_broker.html',
 					  context={'form2':form2,'form3':form3, 'form4':form4})
 
 
+
+##########################################################################
+##########--------------Student Registration-----------------------#######
+
+
+def render_student_registration(request, revert = False):
+	if(revert):
+		form1 = NewPersonForm(request.POST)
+		form2 = NewUserForm(request.POST)
+		form3 = NewMyUserForm(request.POST)
+		form4 = NewGuardianForm(request.POST)
+	else:
+		form1 = NewPersonForm
+		form2 = NewUserForm
+		form3 = NewMyUserForm
+		form4 = NewGuardianForm
+	form1.field_order = ['CNIC', 'FullName', 'Phone']
+	form2.field_order = ['email', 'username', 'password1', 'password2']
+	form4.field_order = ['CNIC', 'FullName', 'Phone']
+	return render(request, 
+				  'main/register_student.html',
+				  context={'form1':form1,'form3':form3,'form4':form4, 'form2':form2})
+	
+
+
+def register_student(request):
+	if request.user.is_authenticated:
+		return redirect("main:homepage")
+		
+	revert = False
+	
+	if(request.method == 'POST'):
+		person_form = NewPersonForm(request.POST)
+		user_form = NewUserForm(request.POST)
+		myuser_form = NewMyUserForm(request.POST, request.FILES)
+		newguardianform = NewGuardianForm(request.POST)
+		
+		if person_form.is_valid() == False:
+			messages.error(request, "Please have a look at your details again")
+			revert = True
+		elif user_form.is_valid() == False:
+			messages.error(request, "Username taken or password mismatch")
+			revert = True				
+		elif user_form.IsEmailPresent():
+			messages.error(request, 'Email is already registered')
+			revert = True
+		elif person_form.DoesCnicHaveAccount():
+			messages.error(request, 'This CNIC already owned by account')
+			revert = True
+		elif person_form.DoesNumberHaveAccount():
+			messages.error(request, 'This Phone number is already owned by account')
+			revert = True
+		elif myuser_form.is_valid() == False:
+			# print(request.POST.get('Photograph'))
+			# if(myuser_form.errors):
+				# for msg in myuser_form.errors:			
+					# messages.error(request, f"{msg}: {myuser_form.errors[msg]}")			
+			messages.error(request, "Image may not be present or is weird")
+			revert = True
+		else:
+			if request.POST.get('AgeCheckNewTutor') == "on":
+				newperson = person_form.SaveNewPerson()
+				newuser  = user_form.SaveNewUser(True)
+				newmyuser = myuser_form.SaveNewMyUser(newperson, newuser, "Pending", "CUser")
+				newstudentform = NewStudentForm()
+				newstudent = newstudentform.SaveNewAdultStudent(newmyuser)
+				messages.success(request, "Registered succesfully")
+				return redirect("main:register_successful")
+			elif newguardianform.is_valid() == True:
+				newperson = person_form.SaveNewPerson()
+				newuser  = user_form.SaveNewUser(True)
+				newmyuser = myuser_form.SaveNewMyUser(newperson, newuser, "Pending", "CUser")
+				guardian = newguardianform.SaveNewGuardian()
+				newstudentform = NewStudentForm()
+				newstudent = newstudentform.SaveNewMinorStudent(newmyuser, guardian)
+				messages.success(request, "Registered succesfully")
+				return redirect("main:register_successful")
+			else:
+				messages.warning(request, "Please certify that you are 18 years old or over, or provide guardian information")
+				revert = True
+	return render_student_registration(request, revert)
+
+
+
+##########################################################################
+##########--------------Handling Login and logout------------------#######
+
+
 def login_request(request):
+	if request.user.is_authenticated:
+		return redirect("main:homepage")
+		
 	if request.method == "POST":
 		form = AuthenticationForm(request, data = request.POST)
 		if form.is_valid():
@@ -184,11 +340,6 @@ def login_request(request):
 	return render(request, 'main/login.html',
 					{'form':form})
 
-					
-def register(request):
-	return render(request, 'main/register.html'
-					)
-
 
 def logout_request(request):
 	logout(request)
@@ -196,8 +347,77 @@ def logout_request(request):
 	return redirect("main:homepage")
 	
 
+
+##########################################################################
+##########--------------Other Views--------------------------------#######
+
+					
+def register(request):
+	if request.user.is_authenticated:
+		return redirect("main:homepage")
+		
+	return render(request, 'main/register.html'
+					)
+
+
+def homepage(request):
+	return render(request, 
+					'main/home.html')
+
+
 def register_successful(request):
+	if request.user.is_authenticated:
+		return redirect("main:homepage")
+		
 	return render(request, 'main/register_successful.html')
+	
+
+def password_change(request):
+	if not request.user.is_authenticated:
+		return redirect("main:homepage")
+	if request.method == 'POST':
+		form = PasswordChange(request.POST)
+		if form.is_valid():
+			if form.cleaned_data.get('new_password') == form.cleaned_data.get('confirm_new_password'):
+				user = authenticate(username = request.user, password = form.cleaned_data.get('old_password'))
+				if user is not None :
+					password = form.cleaned_data.get('new_password')
+					user = User.objects.filter(username = request.user.username).first()
+					user.set_password(password)
+					user.save()
+					user = authenticate(username = request.user, password = password)
+					login(request, user)
+					return password_change_done(request)
+	form = PasswordChange
+	return render(request, 'main/password_change_form.html', {'form':form})
+	
+
+def password_change_done(request):
+	if not request.user.is_authenticated:
+		return redirect("main:homepage")
+	else:
+		return render(request, 'main/password_change_done.html')
+
+
+def view_account(request):
+	if not request.user.is_authenticated:
+		return redirect("main:homepage")
+	if (request.user.myuser.Type == "Tutor"):
+		messages.info(request, "Tutor")
+	elif request.user.myuser.Type == "CUser":
+		if request.user.myuser.cuser.Type == "Student":
+			messages.info(request, "Student")
+		elif request.user.myuser.cuser.Type == "Broker":
+			messages.info(request, "Broker")
+		else:
+			messages.info(request, "Bad type in cuser")
+	else:
+		messages.info(request, "Bad type in myuser")
+	return redirect("main:homepage")
+
+
+
+
 	
 ##------------------------------------------------------------------##
 ## Helper Functions

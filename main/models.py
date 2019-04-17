@@ -12,7 +12,7 @@ from datetime import datetime
 class Person(models.Model):
 	CNIC = models.CharField(max_length = 13, blank = False, null = False)
 	FullName = models.CharField(max_length=100, blank = False, null = False)
-	Phone = PhoneNumberField(blank = False, null = False, unique = True)
+	Phone = PhoneNumberField(blank = False, null = False)
 
 	class Meta:
 		verbose_name_plural = "Person"
@@ -27,7 +27,7 @@ class Person(models.Model):
 	
 class MyUser(models.Model):
 	user = models.OneToOneField(User, on_delete=models.CASCADE, blank = False, null = False, 						unique = True)
-	Pic = models.ImageField()
+	Photograph = models.ImageField()
 	Type = models.CharField(max_length=100)
 	PersonID = models.OneToOneField(Person, on_delete=models.CASCADE, null = True, unique = True)
 	Status = models.CharField(max_length = 50, blank= False, null = False)
@@ -109,14 +109,16 @@ class Subject(models.Model):
 	def __str__(self):
 		return self.Name + " " + self.Board.Name
 
+	def get_board_and_name(self):
+		return self.Board.Name + " " + self.Name
 
 
 class Tutor(models.Model):
 	MyUser = models.OneToOneField(MyUser, on_delete=models.CASCADE, unique = True)
-	Qualification = models.OneToOneField(Qualification, on_delete = models.SET_NULL, null = True)
-	Degree = models.CharField(max_length = 100)
+	Highest_Qualification = models.ForeignKey(Qualification, on_delete = models.SET_NULL, null = True)
+	Degree_Name = models.CharField(max_length = 100)
 	Institution = models.CharField(max_length = 100)
-	DegreeImage = models.ImageField()
+	Degree_Image = models.ImageField()
 
 	def __str__(self):
 		return self.get_str()
@@ -143,3 +145,4 @@ class Timming(models.Model):
 	def __str__(self):
 		return self.Tutor.get_str()
 
+#----------------------------------------------------------------#

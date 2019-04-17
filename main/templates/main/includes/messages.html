@@ -1,4 +1,46 @@
-    {% if messages %}
+
+{% if messages %}
+	{% for message in messages %}
+		{% if message.tags == 'success'%}
+			<div class="alert alert-success" role="alert">
+			  {{ message }}
+			</div>
+		{% elif message.tags == 'info'%}
+			<div class="alert alert-info" role="alert">
+			  {{ message }}
+			</div>
+		{% elif message.tags == 'warning'%}
+			<div class="alert alert-warning" role="alert">
+			  {{ message }}
+			</div>
+		{% elif message.tags == 'error'%}
+			<div class="alert alert-danger" role="alert">
+			  {{ message }}
+			</div>
+		{% endif %}
+	{% endfor %}
+{% endif %}
+
+<!--	Other Alerts that can be used
+
+<div class="alert alert-primary" role="alert">
+  This is a primary alert—check it out!
+</div>
+<div class="alert alert-secondary" role="alert">
+  This is a secondary alert—check it out!
+</div>
+<div class="alert alert-light" role="alert">
+  This is a light alert—check it out!
+</div>
+<div class="alert alert-dark" role="alert">
+  This is a dark alert—check it out!
+</div>
+
+-->
+
+<!--    Old Code for refrence purpose
+
+	{% if messages %}
         {% for message in messages %}
             {% if message.tags == 'success'%}
                 <script>M.toast({html: "{{message}}", classes: 'green rounded', displayLength:2000});</script>
@@ -11,3 +53,5 @@
             {% endif %}
         {% endfor %}
     {% endif %}
+
+-->

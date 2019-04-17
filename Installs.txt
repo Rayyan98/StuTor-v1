@@ -1,0 +1,5 @@
+pip install phonenumbers
+pip install django-crispy-forms
+pip install django-bootstrap3-datetimepicker
+pip install bootstrap3_datetime
+
