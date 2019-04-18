@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from .forms import NewPersonForm, NewMyUserForm, NewUserForm, NewBrokerForm, NewTutorForm, 			NewTutorTimmingForm, NewTutorSubjectForm, NewStudentForm, NewGuardianForm, PasswordChange
+from .forms import NewPersonForm, NewMyUserForm, NewUserForm, NewBrokerForm, NewTutorForm, 			NewTutorTimmingForm, NewTutorSubjectForm, NewStudentForm, NewGuardianForm, PasswordChange, ViewUserForm
 from django.contrib.auth.forms import  AuthenticationForm
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -315,7 +315,7 @@ def login_request(request):
 				if (myuser.Status == "Pending"):
 					messages.info(request, "Your register request is still pending approval")
 					return render(request, 'main/login.html', {"form":form})
-				elif (myuser.Status == "Go"):
+				elif (myuser.Status == "Go" or myuser.Status == 'Recheck'):
 					login(request, user)
 					messages.info(request, f"You are now logged in as {username}")
 					return redirect('main:homepage')
@@ -407,8 +407,10 @@ def view_account(request):
 	elif request.user.myuser.Type == "CUser":
 		if request.user.myuser.cuser.Type == "Student":
 			messages.info(request, "Student")
+			return view_student(request)
 		elif request.user.myuser.cuser.Type == "Broker":
 			messages.info(request, "Broker")
+			return view_broker(request)
 		else:
 			messages.info(request, "Bad type in cuser")
 	else:
@@ -416,7 +418,120 @@ def view_account(request):
 	return redirect("main:homepage")
 
 
+def edit_account(request):
+	if not request.user.is_authenticated:
+		return redirect("main:homepage")
+	if (request.user.myuser.Type == "Tutor"):
+		messages.info(request, "Tutor")
+	elif request.user.myuser.Type == "CUser":
+		if request.user.myuser.cuser.Type == "Student":
+			messages.info(request, "Student")
+			return edit_student(request)
+		elif request.user.myuser.cuser.Type == "Broker":
+			messages.info(request, "Broker")
+			return edit_broker(request)
+		else:
+			messages.info(request, "Bad type in cuser")
+	else:
+		messages.info(request, "Bad type in myuser")
+	return redirect("main:homepage")
 
+
+def view_student(request):
+	if request.method == 'POST':
+		return redirect('main:account_edit')
+	person_form = NewPersonForm(instance = request.user.myuser.PersonID)
+	user_form = ViewUserForm(instance = request.user)
+	myuser_form = NewMyUserForm(instance = request.user.myuser)
+	guard = request.user.myuser.cuser.student.Guardian
+	if guard is not None:
+		guardian_form = NewGuardianForm()
+		guardian_form.FillInstance(guard)
+		guardian_form.Freeze()
+		is_guardian = True
+	else:
+		guardian_form = None
+		is_guardian = False
+	person_form.Freeze()
+	user_form.Freeze()
+	myuser_form.Freeze()
+	return render(request, 'main/view_student.html', {'person_form':person_form, 'user_form':user_form, 'myuser_form':myuser_form, 'edit':False, 'is_guardian':is_guardian,
+	'guardian_form':guardian_form} )
+	
+
+def edit_student(request):
+	if request.method == 'POST':
+		person_form = NewPersonForm(request.POST)
+		user_form = ViewUserForm(request.POST)
+		myuser_form = NewMyUserForm(request.POST, request.FILES)
+		user_form.is_valid()
+		person_form.is_valid()
+		if not person_form.Validate(request.user):
+			messages.error(request, "something person failed 2")
+		elif not user_form.Validate(request.user):
+			messages.error(request, "something user failed")
+		else:
+			person_form.Update(request.user)
+			user_form.Update(request.user)
+			if myuser_form.is_valid():
+				myuser_form.Update(request.user)
+			myuser_form.UpdateUserStatus(request.user, 'Recheck')
+			if request.user.myuser.cuser.student.Guardian is not None:
+				guardian_form = NewGuardianForm(request.POST)
+				guardian_form.is_valid()
+				guardian_form.Update(request.user)
+			return redirect('main:view_account')
+	person_form = NewPersonForm(instance = request.user.myuser.PersonID)
+	user_form = ViewUserForm(instance = request.user)
+	myuser_form = NewMyUserForm(instance = request.user.myuser)
+	guard = request.user.myuser.cuser.student.Guardian
+	if guard is not None:
+		guardian_form = NewGuardianForm()
+		guardian_form.FillInstance(guard)
+		is_guardian = True
+	else:
+		guardian_form = None
+		is_guardian = False
+	user_form.FreezePartial()
+	return render(request, 'main/view_student.html', {'person_form':person_form, 'user_form':user_form, 'myuser_form':myuser_form, 'edit':True, 'is_guardian':is_guardian,
+	'guardian_form':guardian_form} )
+		
+
+def view_broker(request):
+	if request.method == 'POST':
+		return redirect('main:account_edit')
+	person_form = NewPersonForm(instance = request.user.myuser.PersonID)
+	user_form = ViewUserForm(instance = request.user)
+	myuser_form = NewMyUserForm(instance = request.user.myuser)
+	person_form.Freeze()
+	user_form.Freeze()
+	myuser_form.Freeze()
+	return render(request, 'main/view_broker.html', {'person_form':person_form, 'user_form':user_form, 'myuser_form':myuser_form, 'edit':False} )
+	
+
+def edit_broker(request):
+	if request.method == 'POST':
+		person_form = NewPersonForm(request.POST)
+		user_form = ViewUserForm(request.POST)
+		myuser_form = NewMyUserForm(request.POST, request.FILES)
+		user_form.is_valid()
+		person_form.is_valid()
+		if not person_form.Validate(request.user):
+			messages.error(request, "something person failed 2")
+		elif not user_form.Validate(request.user):
+			messages.error(request, "something user failed")
+		else:
+			person_form.Update(request.user)
+			user_form.Update(request.user)
+			if myuser_form.is_valid():
+				myuser_form.Update(request.user)
+			myuser_form.UpdateUserStatus(request.user, 'Recheck')
+			return redirect('main:view_account')
+	person_form = NewPersonForm(instance = request.user.myuser.PersonID)
+	user_form = ViewUserForm(instance = request.user)
+	user_form.FreezePartial()
+	myuser_form = NewMyUserForm(instance = request.user.myuser)
+	return render(request, 'main/view_broker.html', {'person_form':person_form, 'user_form':user_form, 'myuser_form':myuser_form, 'edit':True} )
 
 	
 ##------------------------------------------------------------------##

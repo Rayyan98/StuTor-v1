@@ -5,13 +5,52 @@ from .models import Person, CUser, Broker, Student , MyUser, Day, Qualification,
 from phonenumber_field.formfields import PhoneNumberField
 from crispy_forms.layout import Field
 from bootstrap3_datetime.widgets import DateTimePicker
+from django.contrib import messages
 
 
 #---------------------------No idea what is below here --------------------#
 
+#---------------------------Account view and edit forms below here---------#	
+
+class ViewUserForm(forms.ModelForm):
+	
+	class Meta:
+		model = User
+		fields = {'username', 'email'}
+	
+	def Freeze(self):
+		self.fields.get('username').disabled = True
+		self.fields.get('email').disabled = True
+
+	def FreezePartial(self):
+		self.fields.get('username').disabled = True		
+
+	def IsEmailPresent(self, user):
+		email = self.cleaned_data.get('email')
+		emails = User.objects.filter(email = email).first()
+		print(emails)
+		print(user)
+		if emails is None or  emails == user:
+			return False
+		else:
+			return True
+
+	def Validate(self, user):
+		return not self.IsEmailPresent(user)
+
+	def Update(self, user):
+		user.email = self.cleaned_data.get('email')
+		user.save()
+		
+
+class PasswordChange(forms.Form):
+	old_password = forms.CharField(widget = forms.PasswordInput())
+	new_password = forms.CharField(widget = forms.PasswordInput())
+	confirm_new_password = forms.CharField(widget = forms.PasswordInput())
 
 
-#---------------------------Below this we know-----------------------------#	
+#---------------------------Registrations form below here------------------#	
+
 
 class NewTutorForm(forms.ModelForm):
 
@@ -51,7 +90,6 @@ class NewTutorTimmingForm(forms.Form):
 	
 
 		
-
 class NewTutorSubjectForm(forms.Form):
 
 	def save(self):
@@ -96,6 +134,18 @@ class NewMyUserForm(forms.ModelForm):
 		myuser.save()
 		return myuser
 
+	def Freeze(self):
+		self.fields.get('Photograph').disabled = True
+
+	def Update(self, user):
+		user.myuser.Photograph = self.cleaned_data.get('Photograph')
+		user.myuser.save()
+
+	def UpdateUserStatus(self, user, status):
+		user.myuser.Status = status
+		user.myuser.save()
+
+
 					 
 class NewGuardianForm(forms.Form):
 	Guardian_CNIC = forms.CharField(required = False)
@@ -110,6 +160,19 @@ class NewGuardianForm(forms.Form):
 		guardian.save()
 		return guardian
 
+	def Freeze(self):
+		self.fields.get('Guardian_CNIC').disabled = True
+		self.fields.get('Guardian_FullName').disabled = True
+		self.fields.get('Guardian_Phone').disabled = True
+
+	def FillInstance(self, guardian):
+		self.initial = {'Guardian_CNIC' : guardian.CNIC, 'Guardian_FullName': guardian.FullName, 'Guardian_Phone': guardian.Phone}
+
+	def Update(self, user):
+		user.myuser.cuser.student.Guardian.CNIC = self.cleaned_data.get('Guardian_CNIC')
+		user.myuser.cuser.student.Guardian.FullName = self.cleaned_data.get('Guardian_FullName')
+		user.myuser.cuser.student.Guardian.Phone = self.cleaned_data.get('Guardian_Phone')
+		user.myuser.cuser.student.Guardian.save()
 
 		
 class NewPersonForm(forms.ModelForm):
@@ -141,12 +204,44 @@ class NewPersonForm(forms.ModelForm):
 			return False
 		else:
 			return True
-		
-			
+	
 	def SaveNewPerson(self):
 		return self.save()
 
+	def Freeze(self):
+		self.fields.get('CNIC').disabled = True	
+		self.fields.get('FullName').disabled = True
+		self.fields.get('Phone').disabled = True
 
+	def CheckOtherCNIC(self, user):
+		cnic = self.cleaned_data.get('CNIC')
+		matching_cnics = MyUser.objects.filter(PersonID__CNIC = cnic).exclude(user = user).first()
+		if matching_cnics is None:
+			return False
+		else:
+			return True
+
+	def CheckOtherPhone(self, user):
+		phone = self.cleaned_data.get('Phone')
+		match_phones = MyUser.objects.filter(PersonID__Phone = phone).exclude(user = user).first()
+		if match_phones is None:
+			return False
+		else:
+			return True
+
+	def Validate(self, user):
+		if self.CheckOtherCNIC(user):
+			return False
+		if self.CheckOtherPhone(user):
+			return False
+		return True
+		
+	def Update(self, user):
+		user.myuser.PersonID.CNIC = self.cleaned_data.get('CNIC')
+		user.myuser.PersonID.Phone = self.cleaned_data.get('Phone')
+		user.myuser.PersonID.FullName = self.cleaned_data.get('FullName')
+		user.myuser.PersonID.save()
+		
 	
 class NewBrokerForm(forms.Form):
 	def SaveNewBroker(self, myuser):
@@ -164,9 +259,4 @@ class NewStudentForm(forms.Form):
 		cuser = CUser.objects.create(MyUser = myuser, Type = 'Student')
 		return Student.objects.create(CUser = cuser, Guardian = guardian)
 		
-
-class PasswordChange(forms.Form):
-	old_password = forms.CharField(widget = forms.PasswordInput())
-	new_password = forms.CharField(widget = forms.PasswordInput())
-	confirm_new_password = forms.CharField(widget = forms.PasswordInput())
 

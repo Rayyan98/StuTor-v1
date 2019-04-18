@@ -1,0 +1,22 @@
+{% extends 'main/header.html'%}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+	<form method = "POST" enctype="multipart/form-data">
+	{% csrf_token %}
+	{% if edit %}
+	<button class='btn' style = 'background-color:blue; color:white'  type = 'submit'>Save</button>
+	{% else %}
+	<button class='btn' style = 'background-color:blue; color:white'  type = 'submit'>Edit</button>
+	{% endif %}
+	<br />
+	<br />
+	{{person_form|crispy}}
+	{{user_form|crispy}}
+	{{myuser_form|crispy}}
+	{% if is_guardian %}
+		{{ guardian_form|crispy }}
+	{% endif %}
+{% endblock %}
