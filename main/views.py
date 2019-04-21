@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from .forms import NewPersonForm, NewMyUserForm, NewUserForm, NewBrokerForm, NewTutorForm, 			NewTutorTimmingForm, NewTutorSubjectForm, NewStudentForm, NewGuardianForm, PasswordChange, ViewUserForm
+from collections import OrderedDict
 from django.contrib.auth.forms import  AuthenticationForm
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -317,6 +318,7 @@ def login_request(request):
 					return render(request, 'main/login.html', {"form":form})
 				elif (myuser.Status == "Go" or myuser.Status == 'Recheck'):
 					login(request, user)
+					request.session.set_expiry(0)
 					messages.info(request, f"You are now logged in as {username}")
 					return redirect('main:homepage')
 				elif myuser.Status == "Declined":
@@ -404,6 +406,7 @@ def view_account(request):
 		return redirect("main:homepage")
 	if (request.user.myuser.Type == "Tutor"):
 		messages.info(request, "Tutor")
+		return view_tutor(request)
 	elif request.user.myuser.Type == "CUser":
 		if request.user.myuser.cuser.Type == "Student":
 			messages.info(request, "Student")
@@ -423,6 +426,7 @@ def edit_account(request):
 		return redirect("main:homepage")
 	if (request.user.myuser.Type == "Tutor"):
 		messages.info(request, "Tutor")
+		return edit_tutor(request)
 	elif request.user.myuser.Type == "CUser":
 		if request.user.myuser.cuser.Type == "Student":
 			messages.info(request, "Student")
@@ -436,6 +440,69 @@ def edit_account(request):
 		messages.info(request, "Bad type in myuser")
 	return redirect("main:homepage")
 
+
+def edit_tutor(request):
+	if request.method == 'POST':
+		person_form = NewPersonForm(request.POST)
+		user_form = ViewUserForm(request.POST)
+		myuser_form = NewMyUserForm(request.POST, request.FILES)
+		tutor_form = NewTutorForm(request.POST, request.FILES)
+		person_form.is_valid()
+		user_form.is_valid()
+		times = get_tutor_times(request)
+		all_subjects = get_tutor_subjects(request)
+		if not person_form.Validate(request.user):
+			messages.error(request, "something person failed 2")
+		elif not user_form.Validate(request.user):
+			messages.error(request, "something user failed")
+		elif not times:
+			messages.info(request, "Please check your specidifed times")
+		elif not all_subjects:
+			messages.info(request, "Please check subject specifications")
+		else:
+			person_form.Update(request.user)
+			user_form.Update(request.user)
+			if myuser_form.is_valid():
+				myuser_form.Update(request.user)
+			myuser_form.UpdateUserStatus(request.user, 'Recheck')
+			if tutor_form.is_valid():
+				tutor_form.UpdateFull(request.user)
+			else:
+				tutor_form.UpdatePartial(request.user)
+			tutor_form.AddTutorTimmingsOverwrite(request.user, times[0], times[1])
+			tutor_form.AddTutorSubjectsOverwrite(request.user, all_subjects)
+			return redirect('main:view_account')
+	return view_tutor(request, True)
+
+
+def view_tutor(request, edit = False):
+	if request.method == 'POST':
+		return redirect('main:account_edit')
+	person_form = NewPersonForm(instance = request.user.myuser.PersonID)
+	user_form = ViewUserForm(instance = request.user)
+	myuser_form = NewMyUserForm(instance = request.user.myuser)
+	tutor_form = NewTutorForm(instance = request.user.myuser.tutor)
+	if not edit:
+		person_form.Freeze()
+		user_form.Freeze()
+		myuser_form.Freeze()
+		tutor_form.Freeze()
+	else:
+		user_form.FreezePartial()
+	Tutor_Subjects = [i.Subject.id for i in TutorSubjects.objects.filter(Tutor = request.user.myuser.tutor)]
+	General_Subjects = Subject.objects.filter(Board__Name = 'Independent')
+	Days = Day.objects.all()
+	Tutor_Times = OrderedDict()
+	for i in Days:
+		t = Timming.objects.filter(Tutor = request.user.myuser.tutor, Day = i).first()
+		if t is not None:
+			Tutor_Times[i] = [1, t.TimeStart.strftime("%I %p"), t.TimeEnd.strftime("%I %p")]
+		else:
+			Tutor_Times[i] = [0]
+	print(Tutor_Times)
+	return render(request, 'main/view_tutor.html', {'person_form':person_form, 'user_form':user_form, 'myuser_form':myuser_form, 'edit':edit, 'tutor_form':tutor_form, 'General_Subjects':General_Subjects, 'Specific_Subjects':Subject.objects.exclude(Board__Name = 'Independent'), 'Days':Days, 'Tutor_Times':Tutor_Times, 'Tutor_Subjects':Tutor_Subjects})
+	
+	
 
 def view_student(request):
 	if request.method == 'POST':

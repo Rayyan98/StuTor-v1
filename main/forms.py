@@ -82,7 +82,39 @@ class NewTutorForm(forms.ModelForm):
 			self.AddTutorTimming(tutor, days[i], timmings[2*i], timmings[2*i+1])
 		return True
 		
+	def Freeze(self):
+		self.fields.get('Highest_Qualification').disabled = True
+		self.fields.get('Degree_Name').disabled = True
+		self.fields.get('Institution').disabled = True
+		self.fields.get('Degree_Image').disabled = True
+				
+	def UpdatePartial(self, user, save = True):
+		user.myuser.tutor.Highest_Qualification = self.cleaned_data.get('Highest_Qualification')
+		user.myuser.tutor.Degree_Name = self.cleaned_data.get('Degree_Name')
+		user.myuser.tutor.Institution = self.cleaned_data.get('Institution')
+		if save:
+			user.myuser.tutor.save()
+				
+	def UpdateFull(self, user):
+		self.UpdatePartial(user, False)
+		user.myuser.tutor.Degree_Image = self.cleaned_data.get('Degree_Image')
+		user.myuser.tutor.save()
 		
+	def AddTutorTimmingsAdditional(self, user, days, timmings):
+		self.AddTutorTimmings(user.myuser.tutor, days, timmings)
+		
+	def AddTutorSubjectsAdditional(self, user, subject_ids):
+		self.AddTutorSubjects(user.myuser.tutor, subject_ids)
+		
+	def AddTutorTimmingsOverwrite(self, user, days, timmings):
+		Timming.objects.filter(Tutor = user.myuser.tutor).delete()
+		self.AddTutorTimmings(user.myuser.tutor, days, timmings)
+		
+	def AddTutorSubjectsOverwrite(self, user, subject_ids):
+		TutorSubjects.objects.filter(Tutor = user.myuser.tutor).delete()
+		self.AddTutorSubjects(user.myuser.tutor, subject_ids)
+
+
 
 class NewTutorTimmingForm(forms.Form):
 	def save(self):

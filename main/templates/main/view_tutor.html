@@ -1,0 +1,162 @@
+{% extends 'main/header.html'%}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<!--  Timepicker here probably -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+
+<script src="https://unpkg.com/gijgo@1.9.13/js/gijgo.min.js" type="text/javascript"></script>
+
+<link href="https://unpkg.com/gijgo@1.9.13/css/gijgo.min.css" rel="stylesheet" type="text/css" />
+
+
+<!--  Select Multiple here probably -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.css" />
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
+
+
+	<form method = "POST" enctype="multipart/form-data">
+	{% csrf_token %}
+	{% if edit %}
+	<button class='btn' style = 'background-color:blue; color:white'  type = 'submit'>Save</button>
+	{% else %}
+	<button class='btn' style = 'background-color:blue; color:white'  type = 'submit'>Edit</button>
+	{% endif %}
+	<br />
+	<br />
+	{{person_form|crispy}}
+	{{user_form|crispy}}
+	{{myuser_form|crispy}}
+	{{ tutor_form|crispy }}
+	
+		<div class ="row">
+		<div class ="col-sm-12">
+		<div class = "form-group">
+		{% if edit %}
+		<select class="selectpicker form-control" multiple data-live-search="true" name = "select">
+		{% else %}
+		<select class="selectpicker form-control" multiple data-live-search="true" name = "select" disabled>
+		{% endif %}
+		{% for i in General_Subjects %}
+			{% if i.id in Tutor_Subjects %}
+				<option value={{i.id}} selected>{{i.Name}}</option>
+			{% else %}
+				<option value={{i.id}}>{{i.Name}}</option>
+			{% endif %}
+		{% endfor %}
+		</select>
+		<script>
+			$('select').selectpicker();
+		</script>
+		</div>
+		</div>
+		</div>
+
+		<div class ="row">
+		<div class ="col-sm-12">
+		<div class = "form-group">
+		{% if edit %}
+		<select class="selectpicker form-control" multiple data-live-search="true" name = "select2">
+		{% else %}
+		<select class="selectpicker form-control" multiple data-live-search="true" name = "select2" disabled>
+		{% endif %}
+		{% for i in Specific_Subjects %}
+			{% if i.id in Tutor_Subjects %}
+				<option value ={{i.id}} selected>{{ i.get_board_and_name }}</option>
+			{% else %}
+				<option value ={{i.id}}>{{ i.get_board_and_name }}</option>
+			{% endif %}			
+		{% endfor %}
+		</select>
+		<script>
+			$('select2').selectpicker();
+		</script>
+		</div>
+		</div>
+		</div>
+	
+		<div class = "row">
+		{% for i,j in Tutor_Times.items %}
+		<div class = "col-sm-4">
+			
+			<div class="custom-control custom-checkbox">
+				{% if j.0 == 1 %}
+					{% if edit %}
+						<input type="checkbox" class="custom-control-input" id={{i.Name}} name= "Dayss" checked="checked" value={{i.id}}>
+					{% else %}
+						<input type="checkbox" disabled class="custom-control-input" id={{i.Name}} name= "Dayss" checked="checked" value={{i.id}}>				
+					{% endif %}
+				{% else %}
+					{% if edit %}
+						<input type="checkbox" class="custom-control-input" id={{i.Name}} name= "Dayss" value={{i.id}}>
+					{% else %}
+						<input type="checkbox" disabled class="custom-control-input" id={{i.Name}} name= "Dayss" value={{i.id}}>
+					{% endif %}
+				{% endif %}
+				<label class="custom-control-label" for={{i.Name}}>{{i.Name}}</label>
+			</div>
+			
+			{% if edit %}
+				{% if j.0 == 1 %}
+					<input id="{{i.Name}}TimeStart"  width="310" value="{{j.1}}" name = {{i.id}}TimeStart />
+					<script>
+						$({{i.Name}}TimeStart).timepicker({
+							uiLibrary: 'bootstrap4', format: 'hh tt'
+						});
+					</script>
+				{% else %}
+					<input id="{{i.Name}}TimeStart"  width="310" name = {{i.id}}TimeStart />
+					<script>
+						$({{i.Name}}TimeStart).timepicker({
+							uiLibrary: 'bootstrap4', format: 'hh tt'
+						});
+					</script>
+				{% endif %}
+			{% else %}
+				{% if j.0 == 1 %}
+					<input id="{{i.Name}}TimeStart"  disabled width="310" value= "{{j.1}}" name = {{i.id}}TimeStart />
+				{% else %}
+					<input id="{{i.Name}}TimeStart"  disabled width="310" name = {{i.id}}TimeStart />
+				{% endif %}
+			{% endif %}
+
+			
+			{% if edit %}
+				{% if j.0 == 1 %}
+					<input id="{{i.Name}}TimeEnd" name={{i.id}}TimeEnd width="310" value = "{{j.2}}"/>
+					<script>
+						$({{i.Name}}TimeEnd).timepicker({
+							uiLibrary: 'bootstrap4', format: 'hh tt'
+						});
+					</script>
+				{% else %}
+					<input id="{{i.Name}}TimeEnd" name={{i.id}}TimeEnd width="310" />
+					<script>
+						$({{i.Name}}TimeEnd).timepicker({
+							uiLibrary: 'bootstrap4', format: 'hh tt'
+						});
+					</script>
+				{% endif %}
+			{% else %}
+				{% if j.0 == 1 %}
+					<input id="{{i.Name}}TimeEnd" disabled name={{i.id}}TimeEnd width="310" value = "{{j.2}}"/>
+				{% else %}
+					<input id="{{i.Name}}TimeEnd" disabled name={{i.id}}TimeEnd width="310" />
+				{% endif %}
+			{% endif %}
+
+		</div>
+		{% endfor %}
+		</div>
+		
+	</form>
+
+
+{% endblock %}
