@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Person, CUser, Broker, Student , MyUser, Day, Qualification, Timming, Tutor, Subject, Board, TutorSubjects
+from .models import Person, CUser, Broker, Student , MyUser, Day, Qualification, Timming, Tutor, Subject, Board, TutorSubjects, Messages
 
 from phonenumber_field.formfields import PhoneNumberField
 from django.contrib.auth.models import User
@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 
 
 
-
+admin.site.register(Messages)
 admin.site.register(Person)
 admin.site.register(MyUser)
 admin.site.register(CUser)
@@ -23,5 +23,4 @@ admin.site.register(Timming)
 admin.site.register(Subject)
 admin.site.register(Board)
 admin.site.register(TutorSubjects)
-
 

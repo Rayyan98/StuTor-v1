@@ -17,6 +17,8 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import path
 from . import views
+from django.conf.urls import url
+
 
 app_name = "main"
 
@@ -36,6 +38,9 @@ urlpatterns = [
 	
 	path('account/', views.view_account ,name='view_account'),
 	path('account/edit/', views.edit_account , name = 'account_edit'),
+
+	path('chat/', views.index , name = 'index'),
+	path('chat/<room_name>/', views.room, name='room'),
 	
 ]
 

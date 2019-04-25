@@ -208,7 +208,7 @@ class NewGuardianForm(forms.Form):
 
 		
 class NewPersonForm(forms.ModelForm):
-	CNIC = forms.CharField(required = True)
+	CNIC = forms.IntegerField(required = True)
 	FullName = forms.CharField(required = True)
 	Phone = PhoneNumberField(required = True)
 
@@ -225,6 +225,8 @@ class NewPersonForm(forms.ModelForm):
 		cnic = self.cleaned_data.get('CNIC')
 		matching_cnics = MyUser.objects.filter(PersonID__CNIC = cnic).first()
 		if matching_cnics is None:
+			if len(str(cnic)) != 13:
+				return True
 			return False
 		else:
 			return True
@@ -249,6 +251,8 @@ class NewPersonForm(forms.ModelForm):
 		cnic = self.cleaned_data.get('CNIC')
 		matching_cnics = MyUser.objects.filter(PersonID__CNIC = cnic).exclude(user = user).first()
 		if matching_cnics is None:
+			if len(str(cnic)) != 13:
+				return True
 			return False
 		else:
 			return True

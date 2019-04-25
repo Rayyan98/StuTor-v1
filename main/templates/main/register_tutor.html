@@ -2,6 +2,7 @@
 
 {% load crispy_forms_tags %}
 
+
 {% block content %}
 
 
@@ -23,7 +24,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
 
 
-
+	
+	
 	<form method = "POST" enctype="multipart/form-data">
 		{% csrf_token %}
 		
@@ -31,7 +33,10 @@
 		{{form2|crispy}}
 		{{form3|crispy}}
 		{{form4|crispy}}
+		<!-- Default map with 300x400 dimensions -->
 		
+
+
 		<div class ="row">
 		<div class ="col-sm-6">
 		<div class = "form-group">
