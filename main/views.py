@@ -9,12 +9,51 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login,logout,authenticate
 from .models import Person, CUser, Broker, Student , MyUser, Day, Qualification, Timming, Tutor, 		Subject, Board, TutorSubjects
 from django.contrib.auth.models import User
+from django.utils.safestring import mark_safe
+import json
 
 
 # Create your views here.
 
 ############################################################################
+##########--------------Messaging views------------------------------#######
+
+def index(request):
+	if not request.user.is_authenticated:
+		return redirect('main:homepage')
+	return render(request, 'main/index.html', {})
+
+def room(request, room_name):
+	if not request.user.is_authenticated:
+		return redirect('main:homepage')
+	elif room_name == request.user.username:
+		messages.warning(request, "You cannot message yourself")
+		return redirect('main:index')
+	matching_username = User.objects.filter(username = room_name).first()
+	if matching_username is None:
+		messages.warning(request, "user name doesnot exist")
+		return redirect('main:index')
+	else:
+		if request.user.id < matching_username.id:
+			room_name = "room" + str(request.user.id) + "_" + str(matching_username.id)
+		else:
+			room_name = "room" + str(matching_username.id) + "_" + str(request.user.id)
+		m = max(len(request.user.username), len(matching_username.username))
+		spaces = m - len(request.user.username)
+		userName = request.user.username + ": " + " "*spaces
+		return render(request, 'main/room.html', {
+        'room_name_json': mark_safe(json.dumps(room_name)), 'userName':mark_safe(json.dumps(userName)), 'from':mark_safe(json.dumps(request.user.username)), 'to':mark_safe(json.dumps(matching_username.username)),
+    })
+
+# def room(request, room_name):
+	# print(room_name)
+	# return HttpResponse(f"{room_name} doesnot correspond to anything.")
+
+
+
+############################################################################
 ##########--------------Tutor Registration---------------------------#######
+
 
 
 def get_tutor_times(request):
@@ -363,6 +402,7 @@ def register(request):
 
 
 def homepage(request):
+	print(request)
 	return render(request, 
 					'main/home.html')
 

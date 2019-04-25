@@ -9,8 +9,16 @@ from datetime import datetime
 
 # Create your models here.
 
+class Messages(models.Model):
+	sendingUser = models.ForeignKey(User, on_delete = models.CASCADE, related_name = "user_sent_messages")
+	receivingUser = models.ForeignKey(User, on_delete = models.CASCADE, related_name = "user_received_messages")
+	message = models.CharField(max_length = 100)
+	datetime = models.DateTimeField(default = datetime.now)
+	
+
+
 class Person(models.Model):
-	CNIC = models.CharField(max_length = 13, blank = False, null = False)
+	CNIC = models.IntegerField(blank = False, null = False)
 	FullName = models.CharField(max_length=100, blank = False, null = False)
 	Phone = PhoneNumberField(blank = False, null = False)
 
@@ -145,4 +153,27 @@ class Timming(models.Model):
 	def __str__(self):
 		return self.Tutor.get_str()
 
+	
 #----------------------------------------------------------------#
+
+class Contracts(models.Model):
+	tutor = models.ForeignKey(Tutor, on_delete = models.CASCADE, null= False, blank = False)
+	cuser = models.ForeignKey(CUser, on_delete = models.CASCADE, null= False, blank = False)
+	subject = models.ForeignKey(Subject, on_delete = models.CASCADE, null= False, blank = False)
+	startDate = models.DateTimeField(null= False, blank = False)
+	endDate = models.DateTimeField(null= False, blank = False)
+	status = models.CharField(max_length = 100)
+	review = models.TextField()
+	userRating = models.IntegerField()
+	tutorRating = models.IntegerField()
+	
+	
+class ContractsTimes(models.Model):
+	contract = models.ForeignKey(Contracts, null= False, blank = False, on_delete = models.CASCADE)
+	day = models.ForeignKey(Day, null= False, blank = False, on_delete = models.CASCADE)
+	timeStart = models.TimeField()
+	timeEnd = models.TimeField()
+	
+	
+	
+	
