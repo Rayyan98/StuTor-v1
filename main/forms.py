@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Person, CUser, Broker, Student , MyUser, Day, Qualification, Timming, Tutor, Subject, Board, TutorSubjects
+from .models import Person, CUser, Broker, Student , MyUser, Day, Qualification, Timming, Tutor, Subject, Board, TutorSubjects, Contracts, ContractsTimes
 from phonenumber_field.formfields import PhoneNumberField
 from crispy_forms.layout import Field
 from bootstrap3_datetime.widgets import DateTimePicker
@@ -296,3 +296,52 @@ class NewStudentForm(forms.Form):
 		return Student.objects.create(CUser = cuser, Guardian = guardian)
 		
 
+
+#-------------------------Contract Forms-----------------------------#
+
+class ContractForm(forms.ModelForm):
+	class Meta:
+		model = Contracts
+		exclude = {}
+	
+
+class NewContractForm(ContractForm):
+	class Meta:
+		model = Contracts
+		fields = {'subject',}
+
+	def CreateNewContract(self, days, dates, student, tutor):
+		c = self.save(commit = False)
+		c.tutor = tutor
+		c.startDate  = dates[0]
+		c.endDate = dates[1]
+		c.student = student
+		c.status = 'Pending_View'
+		c.save()
+		self.AddContractTimmings(c, days[0], days[1])
+		
+	def AddContractTimming(self, contract, dayId, startTime, endTime):
+		day = Day.objects.filter(id = dayId).first()
+		return ContractsTimes.objects.create(contract = contract, day = day, timeStart = startTime, timeEnd = endTime)
+		
+	def AddContractTimmings(self, contract, days, timmings):
+		for i in range(len(days)):
+			self.AddContractTimming(contract, days[i], timmings[2*i], timmings[2*i+1])
+		return True
+
+	def Freeze(self):
+		self.fields.get('subject').disabled = True
+
+	def UpdateContract(self, days, dates, contract):
+		contract.subject = self.cleaned_data.get('subject')
+		contract.startDate = dates[0]
+		contract.endDate = dates[1]
+		contract.status = 'Pending_View_Re'
+		contract.save()
+		self.RemoveContractTimmings(contract)
+		self.AddContractTimmings(contract, days[0], days[1])
+
+	def RemoveContractTimmings(self, contract):
+		ContractsTimes.objects.filter(contract = contract).delete()
+		
+		

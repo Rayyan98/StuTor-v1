@@ -91,14 +91,14 @@
 
 		-->
 
-		<input id="{{i.Name}}TimeStart"  width="310" name = {{i.id}}TimeStart />
+		<input id="{{i.Name}}TimeStart"    disabled width="310" name = {{i.id}}TimeStart />
 		<script>
 			$({{i.Name}}TimeStart).timepicker({
 				uiLibrary: 'bootstrap4', format: 'hh tt'
 			});
 		</script>
 		
-		<input id="{{i.Name}}TimeEnd" name={{i.id}}TimeEnd width="310" name = {{i.Name}}TimeEnd/>
+		<input id="{{i.Name}}TimeEnd"   disabled name={{i.id}}TimeEnd width="310" name = {{i.Name}}TimeEnd/>
 		<script>
 			$({{i.Name}}TimeEnd).timepicker({
 				uiLibrary: 'bootstrap4', format: 'hh tt'
