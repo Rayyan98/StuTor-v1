@@ -43,10 +43,12 @@ INSTALLED_APPS = [
 	'main.apps.MainConfig',
 	'crispy_forms',
 	'bootstrap3_datetime',
-	#'easy_maps',
-	'postman',
-]
+	'easy_maps',
+	"geoposition",
+	]
 
+GEOPOSITION_GOOGLE_MAPS_API_KEY = "AIzaSyBDI38GDYQVSpfkenrup-aBKK5d3GM3xFE"
+EASY_MAPS_GOOGLE_KEY = 'AIzaSyBDI38GDYQVSpfkenrup-aBKK5d3GM3xFE'
 
 
 MIDDLEWARE = [
@@ -135,6 +137,7 @@ STATIC_URL = '/static/'
 # mysite/settings.py
 # Channels
 ASGI_APPLICATION = 'routing.application'
+
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
@@ -143,6 +146,7 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
 
 EASY_MAPS_GOOGLE_KEY = "AIzaSyATg_isuGSCHIlJamrxAXfkFDTYhIz7ytM"
 EASY_MAPS_CENTER = (-41.3, 32)

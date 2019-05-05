@@ -7,7 +7,7 @@ from django.contrib.auth.forms import  AuthenticationForm
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login,logout,authenticate
-from .models import Person, CUser, Broker, Student , MyUser, Day, Qualification, Timming, Tutor, 		Subject, Board, TutorSubjects, Contracts, ContractsTimes
+from .models import Person, CUser, Broker, Student , MyUser, Day, Qualification, Timming, Tutor, 		Subject, Board, TutorSubjects, Contracts, ContractsTimes, Messages
 from django.contrib.auth.models import User
 from django.utils.safestring import mark_safe
 import json
@@ -22,6 +22,11 @@ def index(request):
 	if not request.user.is_authenticated:
 		return redirect('main:homepage')
 	return render(request, 'main/index.html', {})
+
+
+def chat_room(request):
+	return render(request, 'main/chat_room.html', {})
+
 
 def room(request, room_name):
 	if not request.user.is_authenticated:
@@ -38,11 +43,11 @@ def room(request, room_name):
 			room_name = "room" + str(request.user.id) + "_" + str(matching_username.id)
 		else:
 			room_name = "room" + str(matching_username.id) + "_" + str(request.user.id)
-		m = max(len(request.user.username), len(matching_username.username))
-		spaces = m - len(request.user.username)
-		userName = request.user.username + ": " + " "*spaces
+		# m = max(len(request.user.username), len(matching_username.username))
+		# spaces = m - len(request.user.username)
+		# userName = request.user.username + ": " + " "*spaces
 		return render(request, 'main/room.html', {
-        'room_name_json': mark_safe(json.dumps(room_name)), 'userName':mark_safe(json.dumps(userName)), 'from':mark_safe(json.dumps(request.user.username)), 'to':mark_safe(json.dumps(matching_username.username)),
+        'room_name_json': mark_safe(json.dumps(room_name)), 'from':mark_safe(json.dumps(request.user.username)), 'to':mark_safe(json.dumps(matching_username.username)),
     })
 
 # def room(request, room_name):
@@ -402,8 +407,12 @@ def register(request):
 
 
 def homepage(request):
+	if request.user.is_authenticated:
+		messageCount = len(Messages.objects.filter(receivingUser = request.user, status = "Pending_View"))
+	else:
+		messageCount = 0
 	return render(request, 
-					'main/home.html')
+					'main/home.html', {'messageCount' : messageCount})
 
 
 def register_successful(request):
@@ -741,16 +750,15 @@ def view_contract_as_student(request, contractID):
 		contract.status = 'Approved'
 		contract.save()
 		return redirect('#/')
-	if contract.status == 'Pending_View':
+	if contract is None:
+		return redirect('#/')
+	elif contract.status == 'Pending_View':
 		contract.status = 'Pending_Approval'
 		contract.save()
 	elif contract.status == 'Pending_View_Re':
 		contract.status = 'Pending_Approval_Re'
 		contract.save()		
-	if contract is not None:
-		return render_contract(request, 3, contract)
-	else:
-		return redirect('#/')
+	return render_contract(request, 3, contract)
 	
 		
 def view_contract(request, contractID):

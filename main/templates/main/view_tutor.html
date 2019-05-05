@@ -1,5 +1,7 @@
 {% extends 'main/header.html'%}
 
+{% load easy_maps_tags %}
+
 {% load crispy_forms_tags %}
 
 {% block content %}
@@ -152,9 +154,13 @@
 				{% endif %}
 			{% endif %}
 
+
+
 		</div>
 		{% endfor %}
 		</div>
+		<br />
+
 		
 	</form>
 

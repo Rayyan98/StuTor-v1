@@ -5,6 +5,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from phonenumber_field.modelfields import PhoneNumberField
 from datetime import datetime
+from geoposition.fields import GeopositionField
+from geoposition import Geoposition
 
 
 # Create your models here.
@@ -12,9 +14,28 @@ from datetime import datetime
 class Messages(models.Model):
 	sendingUser = models.ForeignKey(User, on_delete = models.CASCADE, related_name = "user_sent_messages")
 	receivingUser = models.ForeignKey(User, on_delete = models.CASCADE, related_name = "user_received_messages")
-	message = models.CharField(max_length = 100)
+	message = models.CharField(max_length = 1000)
 	datetime = models.DateTimeField(default = datetime.now)
+	status = models.CharField(max_length = 100)
 	
+	def CreateNewMessage(sendingUser, receivingUser, message):
+		sendingUser = User.objects.filter(username = sendingUser)[0]
+		receivingUser = User.objects.filter(username = receivingUser)[0]
+		if sendingUser is None or receivingUser is None or message == "":
+			pass
+		else:
+			return Messages.objects.create(sendingUser = sendingUser, receivingUser = receivingUser, message = message,  status = "Pending_View")
+
+	def Get_Last_N_Messages(sendingUser, receivingUser, n):
+		unviewed = Messages.objects.filter(sendingUser__username = receivingUser, receivingUser__username = sendingUser, status = "Pending_View")
+		finalset = Messages.objects.filter(sendingUser__username = sendingUser, receivingUser__username = receivingUser).order_by('-datetime') | Messages.objects.filter(receivingUser__username = sendingUser, sendingUser__username = receivingUser).order_by('-datetime')
+		if len(finalset) < n or len(unviewed) < 1 or unviewed.earliest('datetime').datetime > finalset[n-1].datetime:
+			returnSet = finalset[0:n][::-1]
+		else:
+			returnSet = Messages.objects.filter(id__gte = unviewed.earliest('datetime').id, sendingUser__username = sendingUser, receivingUser__username = receivingUser).order_by('-datetime') | Messages.objects.filter(id__gte = unviewed.earliest('datetime').id, receivingUser__username = sendingUser, sendingUser__username = receivingUser).order_by('-datetime')
+			returnSet= returnSet[::-1]
+		return returnSet
+
 
 
 class Person(models.Model):
@@ -127,7 +148,8 @@ class Tutor(models.Model):
 	Degree_Name = models.CharField(max_length = 100)
 	Institution = models.CharField(max_length = 100)
 	Degree_Image = models.ImageField()
-
+	Position = GeopositionField(default = '8.7832, 124.5085')
+	
 	def __str__(self):
 		return self.get_str()
 

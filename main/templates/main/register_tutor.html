@@ -1,5 +1,7 @@
 {% extends 'main/header.html'%}
 
+{% load easy_maps_tags %}
+
 {% load crispy_forms_tags %}
 
 
@@ -24,18 +26,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
 
 
-	
+
 	
 	<form method = "POST" enctype="multipart/form-data">
 		{% csrf_token %}
-		
 		{{form1|crispy}}
 		{{form2|crispy}}
 		{{form3|crispy}}
 		{{form4|crispy}}
-		<!-- Default map with 300x400 dimensions -->
-		
-
 
 		<div class ="row">
 		<div class ="col-sm-6">
@@ -91,14 +89,14 @@
 
 		-->
 
-		<input id="{{i.Name}}TimeStart"    disabled width="310" name = {{i.id}}TimeStart />
+		<input id="{{i.Name}}TimeStart"     width="310" name = {{i.id}}TimeStart />
 		<script>
 			$({{i.Name}}TimeStart).timepicker({
 				uiLibrary: 'bootstrap4', format: 'hh tt'
 			});
 		</script>
 		
-		<input id="{{i.Name}}TimeEnd"   disabled name={{i.id}}TimeEnd width="310" name = {{i.Name}}TimeEnd/>
+		<input id="{{i.Name}}TimeEnd"    name={{i.id}}TimeEnd width="310" name = {{i.Name}}TimeEnd/>
 		<script>
 			$({{i.Name}}TimeEnd).timepicker({
 				uiLibrary: 'bootstrap4', format: 'hh tt'
@@ -123,6 +121,7 @@
 		{% endfor %}
 		</div>
 		<br />
+
 
 		<div class="custom-control custom-checkbox">
 			<input type="checkbox" class="custom-control-input" id="defaultUnchecked" name = "AgeCheckNewTutor">

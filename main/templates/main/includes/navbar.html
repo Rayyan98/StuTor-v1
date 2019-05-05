@@ -9,20 +9,37 @@
     <ul class="navbar-nav mr-auto">
 
 	{% if user.is_authenticated %}
-      <li class="nav-item active">
-        <a class="nav-link" href="/account">Account <span class="sr-only">(current)</span></a>
-      </li>
-
-      <li class="nav-item active">
-        <a class="nav-link" href="/logout">Logout <span class="sr-only">(current)</span></a>
-      </li>
-
-      <li class="nav-item active">
-        <a class="nav-link" href="/password_change">Change Password <span class="sr-only">(current)</span></a>
-      </li>
 
       <li class="nav-item active">
         <a class="nav-link" href="/chat">Chat<span class="sr-only">(current)</span></a>
+      </li>
+
+      <li class="nav-item active">
+        <a class="nav-link" href="/Messages">
+		Messages
+		{% if messageCount > 0 %}
+			<span style="color:blue">{{ messageCount}} </span>
+		{% endif %}
+		<span class="sr-only">(current)</span></a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link" href="#">Link</a>
+      </li>
+
+    <li class="nav-item dropdown">
+      <a class="nav-link dropdown-toggle" href="#" id="navbardrop" data-toggle="dropdown">
+        Dropdown link
+      </a>
+      <div class="dropdown-menu">
+        <a class="dropdown-item" href="/account">Account</a>
+        <a class="dropdown-item" href="/password_change">Change Password</a>
+        <a class="dropdown-item" href="/logout">Logout</a>
+      </div>
+    </li>
+
+      <li class="nav-item">
+        <a class="nav-link disabled" href="#">Disabled</a>
       </li>
 	{% else %}
 
@@ -36,25 +53,6 @@
 	
 	{% endif %}
 
-      <li class="nav-item">
-        <a class="nav-link" href="#">Link</a>
-      </li>
-
-      <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          Dropdown
-        </a>
-        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-          <a class="dropdown-item" href="#">Action</a>
-          <a class="dropdown-item" href="#">Another action</a>
-          <div class="dropdown-divider"></div>
-          <a class="dropdown-item" href="#">Something else here</a>
-        </div>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link disabled" href="#">Disabled</a>
-      </li>
 
     </ul>
 
