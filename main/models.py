@@ -158,14 +158,14 @@ class Timming(models.Model):
 
 class Contracts(models.Model):
 	tutor = models.ForeignKey(Tutor, on_delete = models.CASCADE, null= False, blank = False)
-	cuser = models.ForeignKey(CUser, on_delete = models.CASCADE, null= False, blank = False)
+	student = models.ForeignKey(Student, on_delete = models.CASCADE, null= False, blank = False)
 	subject = models.ForeignKey(Subject, on_delete = models.CASCADE, null= False, blank = False)
 	startDate = models.DateTimeField(null= False, blank = False)
 	endDate = models.DateTimeField(null= False, blank = False)
 	status = models.CharField(max_length = 100)
-	review = models.TextField()
-	userRating = models.IntegerField()
-	tutorRating = models.IntegerField()
+	review = models.TextField(null = True, blank = True)
+	userRating = models.IntegerField(null= True, blank = True)
+	tutorRating = models.IntegerField(null = True, blank = True)
 	
 	
 class ContractsTimes(models.Model):

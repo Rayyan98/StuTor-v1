@@ -42,5 +42,9 @@ urlpatterns = [
 	path('chat/', views.index , name = 'index'),
 	path('chat/<room_name>/', views.room, name='room'),
 	
+	path('contracts/create/', views.create_contract, name = 'create_contract'),
+	path('contracts/<contractID>/', views.view_contract, name = 'view_contract'),
+	path('contracts/<contractID>/edit/', views.edit_contract, name = 'edit_contract'),
 ]
+
 

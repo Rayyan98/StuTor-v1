@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from .forms import NewPersonForm, NewMyUserForm, NewUserForm, NewBrokerForm, NewTutorForm, 			NewTutorTimmingForm, NewTutorSubjectForm, NewStudentForm, NewGuardianForm, PasswordChange, ViewUserForm
+from .forms import NewPersonForm, NewMyUserForm, NewUserForm, NewBrokerForm, NewTutorForm, 			NewTutorTimmingForm, NewTutorSubjectForm, NewStudentForm, NewGuardianForm, 			PasswordChange, ViewUserForm, NewContractForm
 from collections import OrderedDict
 from django.contrib.auth.forms import  AuthenticationForm
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login,logout,authenticate
-from .models import Person, CUser, Broker, Student , MyUser, Day, Qualification, Timming, Tutor, 		Subject, Board, TutorSubjects
+from .models import Person, CUser, Broker, Student , MyUser, Day, Qualification, Timming, Tutor, 		Subject, Board, TutorSubjects, Contracts, ContractsTimes
 from django.contrib.auth.models import User
 from django.utils.safestring import mark_safe
 import json
@@ -402,7 +402,6 @@ def register(request):
 
 
 def homepage(request):
-	print(request)
 	return render(request, 
 					'main/home.html')
 
@@ -539,7 +538,7 @@ def view_tutor(request, edit = False):
 			Tutor_Times[i] = [1, t.TimeStart.strftime("%I %p"), t.TimeEnd.strftime("%I %p")]
 		else:
 			Tutor_Times[i] = [0]
-	print(Tutor_Times)
+	# print(Tutor_Times)
 	return render(request, 'main/view_tutor.html', {'person_form':person_form, 'user_form':user_form, 'myuser_form':myuser_form, 'edit':edit, 'tutor_form':tutor_form, 'General_Subjects':General_Subjects, 'Specific_Subjects':Subject.objects.exclude(Board__Name = 'Independent'), 'Days':Days, 'Tutor_Times':Tutor_Times, 'Tutor_Subjects':Tutor_Subjects})
 	
 	
@@ -643,4 +642,154 @@ def edit_broker(request):
 	
 ##------------------------------------------------------------------##
 ## Helper Functions
+
+def render_contract(request, type, contract = 0):
+	Tutor_Times = OrderedDict()
+	
+	if type == 1:
+		form = NewContractForm
+		for i in Day.objects.all():
+			t = Timming.objects.filter(Tutor = request.user.myuser.tutor, Day = i).first()
+			if t is not None:
+				Tutor_Times[i] = [1, t.TimeStart.strftime("%I %p"), t.TimeEnd.strftime("%I %p")]
+			else:
+				Tutor_Times[i] = [0]
+		return render(request, 'main/view_contract.html', {'contract_form':form, 'edit':type, 'Tutor_Times':Tutor_Times})
+	else:
+		if type == 0 or type == 2:
+			username = contract.student.CUser
+		else:
+			username = contract.tutor
+		form = NewContractForm(instance = contract)
+		if type != 2:
+			form.Freeze()
+		for i in Day.objects.all():
+			t = ContractsTimes.objects.filter(contract = contract, day = i).first()
+			if t is not None:
+				Tutor_Times[i] = [1, t.timeStart.strftime("%I %p"), t.timeEnd.strftime("%I %p")]
+			else:
+				Tutor_Times[i] = [0]
+		startDate = contract.startDate.strftime('%m/%d/%Y')
+		endDate = contract.endDate.strftime('%m/%d/%Y')
+		return render(request, 'main/view_contract.html', {'contract_form':form, 'edit':type, 'Tutor_Times':Tutor_Times, 'startDate':startDate, 'endDate':endDate, 'student':username, 'contract_status': contract.status})
+
+
+def get_contract_dates(request):
+	startDate  = request.POST.get('startDate')
+	endDate = request.POST.get('endDate')
+	try:
+		startDate = datetime.strptime(startDate, '%m/%d/%Y').date()
+		endDate = datetime.strptime(endDate, '%m/%d/%Y').date()
+	except:
+		messages.error(request, 'Please use date picker to specify some dates')
+		return False
+	if (endDate - startDate).days < 30:
+		messages.error(request , "The dureation of contract should be atleast a month")
+		return False
+	elif startDate < datetime.today().date():
+		messages.error(request , "Start date cannot be less than todays date")
+		return False
+	return [startDate, endDate]
+
+
+def create_contract_as_tutor(request):
+	if request.method == 'POST':
+		form = NewContractForm(request.POST)
+		times = get_tutor_times(request)
+		dates = get_contract_dates(request)
+		user = Student.objects.filter(CUser__MyUser__user__username = request.POST.get('Username')).first()
+		if not times:
+			pass
+		elif not form.is_valid():
+			messages.error(request, "Please choose a subject")
+		elif not dates:
+			pass
+		elif user is None:
+			messages.error(request, "No such student")
+		else:
+			messages.success(request , "Contract sent for approval to student")
+			form.CreateNewContract(times, dates, user, request.user.myuser.tutor)
+	return render_contract(request, 1)
+	
+
+def create_contract(request):
+	if not request.user.is_authenticated:
+		return redirect('main:homepage')
+	elif request.user.myuser.Type  == 'Tutor':
+		return create_contract_as_tutor(request)
+	else:
+		return redirect('main:homepage')
+
+
+def view_contract_as_tutor(request, contractID):	
+	if request.method == 'POST':
+		if request.POST.get('Edit') is not None:
+			return redirect('edit/')
+		if request.POST.get('Delete') is not None:
+			messages.warning(request, 'If you really want to delete this contract press delete again')
+			return redirect('#/')
+	contract = Contracts.objects.filter(tutor = request.user.myuser.tutor, id = contractID).first()
+	if contract is not None:
+		return render_contract(request, 0, contract)
+	else:
+		return redirect('#/')
+
+
+def view_contract_as_student(request, contractID):
+	contract = Contracts.objects.filter(student = request.user.myuser.cuser.student, id = contractID).first()
+	if request.method == 'POST':
+		contract.status = 'Approved'
+		contract.save()
+		return redirect('#/')
+	if contract.status == 'Pending_View':
+		contract.status = 'Pending_Approval'
+		contract.save()
+	elif contract.status == 'Pending_View_Re':
+		contract.status = 'Pending_Approval_Re'
+		contract.save()		
+	if contract is not None:
+		return render_contract(request, 3, contract)
+	else:
+		return redirect('#/')
+	
+		
+def view_contract(request, contractID):
+	if not contractID.isnumeric():
+		return redirect('#/')
+	if not request.user.is_authenticated:
+		return redirect('main:homepage')
+	if request.user.myuser.Type == 'Tutor':
+		return view_contract_as_tutor(request, contractID)
+	elif request.user.myuser.cuser.Type == 'Student':
+		return view_contract_as_student(request, contractID)
+	else:
+		return HttpResponse('Something went severly wrong, we suggest you report the matter to the admin right away')
+
+
+def edit_contract(request, contractID):
+	if not request.user.is_authenticated:
+		return redirect('main:homepage')
+	elif request.user.myuser.Type == 'Tutor':
+		return edit_contract_as_tutor(request, contractID)
+	else:
+		return redirect('main:homepage')
+
+	
+def edit_contract_as_tutor(request, contractID):
+	if request.method == 'POST':
+		form = NewContractForm(request.POST)
+		times = get_tutor_times(request)
+		dates = get_contract_dates(request)
+		if not times:
+			pass
+		elif not form.is_valid():
+			messages.error(request, "Please choose a subject")
+		elif not dates:
+			pass
+		else:
+			form.UpdateContract(times, dates, Contracts.objects.filter(id = contractID).first())
+			return redirect('/contracts/'+contractID)
+	contract = Contracts.objects.filter(tutor = request.user.myuser.tutor, id = contractID).first()
+	return render_contract(request, 2, contract)
+	
 
