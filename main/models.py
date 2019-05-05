@@ -5,8 +5,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from phonenumber_field.modelfields import PhoneNumberField
 from datetime import datetime
-from geoposition.fields import GeopositionField
-from geoposition import Geoposition
+from location_field.models.plain import PlainLocationField
 
 
 # Create your models here.
@@ -148,7 +147,7 @@ class Tutor(models.Model):
 	Degree_Name = models.CharField(max_length = 100)
 	Institution = models.CharField(max_length = 100)
 	Degree_Image = models.ImageField()
-	Position = GeopositionField(default = '8.7832, 124.5085')
+	location = PlainLocationField(zoom=7)
 	
 	def __str__(self):
 		return self.get_str()
