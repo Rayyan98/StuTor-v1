@@ -112,6 +112,10 @@ class Student(models.Model):
 	def get_str(self):
 		return self.CUser.get_str()
 
+	def get_recent_contracts(self, n):
+		return Contracts.objects.filter(student = self).order_by('-datetime')[:n]
+
+
 	
 class Day(models.Model):
 	Name = models.CharField(max_length=100)
@@ -201,8 +205,19 @@ class Tutor(models.Model):
 		print(len(l))
 		return l
 				
-	def get_average_rating(self, tutor):
-		tutor.contracts_set.
+	def get_average_rating(self):
+		r = self.contracts_set.values().annotate(rating = Avg('tutorRating')).first()
+		if r is not None :
+			r = r['rating']
+		return r
+		
+	def get_n_recent_reviews(self, n):
+		return self.contracts_set.values().order_by('-endDate')[0:n]
+		
+	
+	def get_recent_contracts(self, n):
+		return Contracts.objects.filter(tutor = self).order_by('-datetime')[:n]
+		
 
 	
 class TutorSubjects(models.Model):
@@ -237,7 +252,9 @@ class Contracts(models.Model):
 	review = models.TextField(null = True, blank = True)
 	userRating = models.IntegerField(null= True, blank = True)
 	tutorRating = models.IntegerField(null = True, blank = True)
-	
+	datetime = models.DateTimeField(default = datetime.now)
+
+
 	
 class ContractsTimes(models.Model):
 	contract = models.ForeignKey(Contracts, null= False, blank = False, on_delete = models.CASCADE)

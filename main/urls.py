@@ -45,6 +45,7 @@ urlpatterns = [
 	
 	path('search/', views.search_tutor, name = 'search_tutor'),
 	
+	path('contracts/', views.view_contracts, name = "view_contracts"),
 	path('contracts/create/', views.create_contract, name = 'create_contract'),
 	path('contracts/<contractID>/', views.view_contract, name = 'view_contract'),
 	path('contracts/<contractID>/edit/', views.edit_contract, name = 'edit_contract'),

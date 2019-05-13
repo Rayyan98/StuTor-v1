@@ -11,7 +11,15 @@
 	{{user_form|crispy}}
 	{{myuser_form|crispy}}
 	{{ tutor_form|crispy }}
-	
+	Rating: {{ rating }} 
+	<br />
+	Reviews
+	<br />
+	{% for i in reviews %}
+		{%  if i.review != "" %}
+			{{ i.review }}
+		{% endif %}
+	{% endfor %}
 	</form>
 
 

@@ -7,7 +7,7 @@ from crispy_forms.layout import Field
 from bootstrap3_datetime.widgets import DateTimePicker
 from django.contrib import messages
 from main.hash import encode
-
+from datetime import datetime
 
 #---------------------------No idea what is below here --------------------#
 
@@ -353,6 +353,7 @@ class NewContractForm(ContractForm):
 		contract.startDate = dates[0]
 		contract.endDate = dates[1]
 		contract.status = 'Pending_View_Re'
+		contract.datetime = datetime.now()
 		contract.save()
 		self.RemoveContractTimmings(contract)
 		self.AddContractTimmings(contract, days[0], days[1])

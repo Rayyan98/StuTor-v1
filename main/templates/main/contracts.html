@@ -1,0 +1,28 @@
+{% extends 'main/header.html'%}
+
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<a href="/contracts/create" class="btn btn-success" role="button">New Contract</a>
+<br />
+<br />
+
+{% for i in contracts %}
+	{% if user.myuser.Type == "Tutor" %}
+		<a href="/contracts/{{i.id}}" class="btn btn-info" role="button">{{i.student }}</a>
+	{% else %}
+		{% if i.status == "Pending_View" %}
+			<a href="/contracts/{{i.id}}" class="btn btn-primary" role="button">{{i.tutor}}</a>
+		{% else %}
+			<a href="/contracts/{{i.id}}" class="btn btn-info" role="button">{{i.tutor}}</a>
+		{% endif %}
+	
+	{% endif %}
+	<br />
+	<br />
+{% endfor %}
+
+{% endblock %}
+

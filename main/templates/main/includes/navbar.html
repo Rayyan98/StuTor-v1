@@ -20,6 +20,17 @@
       </li>
 
       <li class="nav-item">
+        <a class="nav-link" href="/contracts">Contracts</a>
+      </li>
+
+	  {% if user.is_authenticated and user.myuser.Type == "CUser" and user.myuser.cuser.Type == "Student" %}
+      <li class="nav-item">
+        <a class="nav-link" href="/search">Search</a>
+      </li>
+	{% endif %}
+
+
+      <li class="nav-item">
         <a class="nav-link" href="/account">Account</a>
       </li>
 

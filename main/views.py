@@ -128,6 +128,17 @@ def search_tutor(request):
 			return search_result(request, times)
 	return render_search(request)
 
+def view_contracts(request):
+	if not request.user.is_authenticated:
+		return redirect("main:homepage")
+	if  request.user.myuser.Type == 'Tutor':
+		c = request.user.myuser.tutor.get_recent_contracts(10)
+	elif request.user.myuser.cuser.Type == 'Student':
+		c = request.user.myuser.cuser.student.get_recent_contracts(10)
+	else:
+		return redirect("main:homepage")
+	return render(request, 'main/contracts.html', {'contracts': c})
+
 
 def view_profile(request, username):
 	if not request.user.is_authenticated:
@@ -136,6 +147,8 @@ def view_profile(request, username):
 		return redirect('chat/username')
 	else:
 		tuser = User.objects.filter(username = username).first()
+		if tuser.myuser.Type != 'Tutor':
+			return redirect('chat/username')
 		person_form = ViewPersonFormLim(instance = tuser.myuser.PersonID)
 		user_form = ViewUserForm(instance = tuser)
 		myuser_form = NewMyUserForm(instance = tuser.myuser)
@@ -145,9 +158,10 @@ def view_profile(request, username):
 		myuser_form.Freeze()
 		tutor_form.Freeze()
 		
+		rating = tuser.myuser.tutor.get_average_rating()
+		reviews  = tuser.myuser.tutor.get_n_recent_reviews(10)
 		
-		
-		return render(request, 'main/view_profile.html', {'person_form':person_form, 'user_form':user_form, 'myuser_form': myuser_form, 'tutor_form':tutor_form})
+		return render(request, 'main/view_profile.html', {'person_form':person_form, 'user_form':user_form, 'myuser_form': myuser_form, 'tutor_form':tutor_form, "rating": rating, 'reviews': reviews})
 
 	
 
@@ -814,6 +828,7 @@ def view_contract_as_student(request, contractID):
 	contract = Contracts.objects.filter(student = request.user.myuser.cuser.student, id = contractID).first()
 	if request.method == 'POST':
 		contract.status = 'Approved'
+		contract.datetime = datetime.now()
 		contract.save()
 		return redirect('#/')
 	if contract is None:
