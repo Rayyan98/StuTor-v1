@@ -1,4 +1,7 @@
+pip install django (v 2.2)
 pip install phonenumbers
+pip install django-phonenumber-field
+pip install django-location-field
 pip install django-crispy-forms
 pip install django-bootstrap3-datetimepicker
 pip install bootstrap3_datetime
