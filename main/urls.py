@@ -26,11 +26,11 @@ urlpatterns = [
 	path('', views.homepage,name='homepage'),
 
 	path('login/', views.login_request),
+	path('logout/', views.logout_request),
 
 	path('register/student/', views.register_student),
 	path('register/broker/', views.register_broker),
 	path('register/', views.register),
-	path('logout/', views.logout_request),
 	path('register/successful/', views.register_successful, name = 'register_successful'),
 	path('register/tutor/', views.register_tutor, name = 'register_tutor'),
 
@@ -38,15 +38,19 @@ urlpatterns = [
 	
 	path('account/', views.view_account ,name='view_account'),
 	path('account/edit/', views.edit_account , name = 'account_edit'),
+	path('account/<username>', views.view_profile, name= 'view_profile'),
 
 	path('chat/', views.index , name = 'index'),
-	path('chat/test/', views.chat_room, name = 'chat_room'),
 	path('chat/<room_name>/', views.room, name='room'),
+	
+	path('search/', views.search_tutor, name = 'search_tutor'),
 	
 	path('contracts/create/', views.create_contract, name = 'create_contract'),
 	path('contracts/<contractID>/', views.view_contract, name = 'view_contract'),
 	path('contracts/<contractID>/edit/', views.edit_contract, name = 'edit_contract'),
 	
+	path('messages/', views.messages_page, name = 'messages')
+
 ]
 
 

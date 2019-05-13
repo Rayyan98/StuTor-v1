@@ -1,0 +1,18 @@
+{% extends 'main/header.html'%}
+
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+	<form method = "POST" enctype="multipart/form-data">
+	{% csrf_token %}
+	{{person_form|crispy}}
+	{{user_form|crispy}}
+	{{myuser_form|crispy}}
+	{{ tutor_form|crispy }}
+	
+	</form>
+
+
+{% endblock %}

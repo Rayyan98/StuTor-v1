@@ -6,6 +6,7 @@ from phonenumber_field.formfields import PhoneNumberField
 from crispy_forms.layout import Field
 from bootstrap3_datetime.widgets import DateTimePicker
 from django.contrib import messages
+from main.hash import encode
 
 
 #---------------------------No idea what is below here --------------------#
@@ -42,7 +43,8 @@ class ViewUserForm(forms.ModelForm):
 		user.email = self.cleaned_data.get('email')
 		user.save()
 		
-
+		
+		
 class PasswordChange(forms.Form):
 	old_password = forms.CharField(widget = forms.PasswordInput())
 	new_password = forms.CharField(widget = forms.PasswordInput())
@@ -56,11 +58,13 @@ class NewTutorForm(forms.ModelForm):
 	
 	class Meta:
 		model = Tutor
-		exclude = {'MyUser'}
+		exclude = {'MyUser', 'hash'}
 		
 	def SaveNewTutor(self, myuser):
 		newtutor = self.save(commit = False)
 		newtutor.MyUser = myuser
+		latlong = self.cleaned_data.get('location').split(',')
+		newtutor.hash = encode(float(latlong[0]), float(latlong[1]), precision = 5)
 		newtutor.save()
 		return newtutor
 		
@@ -92,6 +96,9 @@ class NewTutorForm(forms.ModelForm):
 		user.myuser.tutor.Highest_Qualification = self.cleaned_data.get('Highest_Qualification')
 		user.myuser.tutor.Degree_Name = self.cleaned_data.get('Degree_Name')
 		user.myuser.tutor.Institution = self.cleaned_data.get('Institution')
+		user.myuser.tutor.location = self.cleaned_data.get('location')
+		latlong = self.cleaned_data.get('location').split(',')
+		user.myuser.tutor.hash = encode(float(latlong[0]), float(latlong[1]), precision = 5)
 		if save:
 			user.myuser.tutor.save()
 				
@@ -115,17 +122,10 @@ class NewTutorForm(forms.ModelForm):
 		self.AddTutorSubjects(user.myuser.tutor, subject_ids)
 
 
-
-class NewTutorTimmingForm(forms.Form):
-	def save(self):
-		pass
-	
-
-		
-class NewTutorSubjectForm(forms.Form):
-
-	def save(self):
-		pass
+class ViewTutorFormLim(NewTutorForm):
+	class Meta:
+		model = Tutor
+		exclude = {'MyUser', 'hash', 'location' }
 
 
 class NewUserForm(UserCreationForm):
@@ -149,6 +149,10 @@ class NewUserForm(UserCreationForm):
 		newuser.save()
 		return newuser
 	
+	
+
+
+
 
 class NewMyUserForm(forms.ModelForm):
 	
@@ -278,6 +282,18 @@ class NewPersonForm(forms.ModelForm):
 		user.myuser.PersonID.FullName = self.cleaned_data.get('FullName')
 		user.myuser.PersonID.save()
 		
+
+class ViewPersonFormLim(forms.ModelForm):
+	class Meta:
+		model = Person
+		fields = {
+					 'FullName', 'Phone'
+				 }	
+				 
+	def Freeze(self):
+		self.fields.get('FullName').disabled = True
+		self.fields.get('Phone').disabled = True
+
 	
 class NewBrokerForm(forms.Form):
 	def SaveNewBroker(self, myuser):

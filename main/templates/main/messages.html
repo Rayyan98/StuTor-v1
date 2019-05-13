@@ -1,0 +1,28 @@
+{% extends 'main/header.html'%}
+
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<a href="/chat" class="btn btn-success" role="button">New Chat</a>
+<br />
+<br />
+
+{% for i in users %}
+	{% if user.username == i.s_username %}
+		<a href="/chat/{{i.r_username}}" class="btn btn-info" role="button">{{i.r_username}}</a>
+	{% else %}
+		{% if i.unread == "Pending_View" %}
+			<a href="/chat/{{i.s_username}}" class="btn btn-primary" role="button">{{i.s_username}}</a>
+		{% else %}
+			<a href="/chat/{{i.s_username}}" class="btn btn-info" role="button">{{i.s_username}}</a>
+		{% endif %}
+	
+	{% endif %}
+	<br />
+	<br />
+{% endfor %}
+
+{% endblock %}
+

@@ -2,6 +2,8 @@ pip install phonenumbers
 pip install django-crispy-forms
 pip install django-bootstrap3-datetimepicker
 pip install bootstrap3_datetime
+pip install django-location-field
+
 
 pip install -U channels
 ** If installation of channels fails due to twisted, download the correct .whl file from https://www.lfd.uci.edu/~gohlke/pythonlibs/ for twisted and install it and then install channels, for futher instructions refer to this page https://stackoverflow.com/questions/29846087/microsoft-visual-c-14-0-is-required-unable-to-find-vcvarsall-bat **

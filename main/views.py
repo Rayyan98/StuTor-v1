@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from .forms import NewPersonForm, NewMyUserForm, NewUserForm, NewBrokerForm, NewTutorForm, 			NewTutorTimmingForm, NewTutorSubjectForm, NewStudentForm, NewGuardianForm, 			PasswordChange, ViewUserForm, NewContractForm
+from .forms import NewPersonForm, NewMyUserForm, NewUserForm, NewBrokerForm, NewTutorForm, 			 NewStudentForm, NewGuardianForm, 			PasswordChange, ViewUserForm, NewContractForm, ViewPersonFormLim, ViewTutorFormLim
 from collections import OrderedDict
 from django.contrib.auth.forms import  AuthenticationForm
 from django.contrib import messages
@@ -11,12 +11,18 @@ from .models import Person, CUser, Broker, Student , MyUser, Day, Qualification,
 from django.contrib.auth.models import User
 from django.utils.safestring import mark_safe
 import json
+from main.hash import encode
+
 
 
 # Create your views here.
 
 ############################################################################
 ##########--------------Messaging views------------------------------#######
+
+
+
+
 
 def index(request):
 	if not request.user.is_authenticated:
@@ -78,8 +84,8 @@ def get_tutor_times(request):
 			return False
 		else:
 			try:
-				t1 = datetime.strptime(t1, '%H %p')
-				t2 = datetime.strptime(t2, '%H %p')
+				t1 = datetime.strptime(t1, '%I %p')
+				t2 = datetime.strptime(t2, '%I %p')
 			except:
 				messages.error(request, "Please use the time widget oversmart")
 				return False
@@ -93,6 +99,66 @@ def get_tutor_times(request):
 				Times.append(t2)
 	return (days, Times)
 
+def render_search(request):
+	Days = Day.objects.all()
+	Subjects = Subject.objects.all()
+	return render(request, 'main/search.html', {'Days': Days, 'Subjects': Subjects})
+
+
+def search_result(request, times):
+	latlong = request.POST.get('location').split(',')
+	hash = encode(float(latlong[0]), float(latlong[1]), precision = 5)
+	sub = request.POST.get('subjec')
+	tutors = Tutor.get_matching_tutors(hash, sub, times)
+	return render(request, 'main/search_result.html', {'tutors': tutors})
+
+
+def search_tutor(request):
+	if not request.user.is_authenticated:
+		return redirect("main:homepage")
+	if request.method == "POST":
+		times = get_tutor_times(request)
+		if not times:
+			pass
+		elif request.POST.get('location') is None:
+			messages.error(request, "Please specify location")
+		elif request.POST.get('subjec') is None:
+			messages.error(request, "Please spcify a subject")
+		else:
+			return search_result(request, times)
+	return render_search(request)
+
+
+def view_profile(request, username):
+	if not request.user.is_authenticated:
+		return redirect("main:homepage")
+	if request.method == "POST":
+		return redirect('chat/username')
+	else:
+		tuser = User.objects.filter(username = username).first()
+		person_form = ViewPersonFormLim(instance = tuser.myuser.PersonID)
+		user_form = ViewUserForm(instance = tuser)
+		myuser_form = NewMyUserForm(instance = tuser.myuser)
+		tutor_form = ViewTutorFormLim(instance = tuser.myuser.tutor)
+		person_form.Freeze()
+		user_form.Freeze()
+		myuser_form.Freeze()
+		tutor_form.Freeze()
+		
+		
+		
+		return render(request, 'main/view_profile.html', {'person_form':person_form, 'user_form':user_form, 'myuser_form': myuser_form, 'tutor_form':tutor_form})
+
+	
+
+
+def messages_page(request):
+	if not request.user.is_authenticated:
+		return redirect("main:homepage")
+	else:
+		u = Messages.get_list_of_users(request.user)
+		return render(request, "main/messages.html", {'users': u})
+	
 
 	
 def get_tutor_subjects(request):

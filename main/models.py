@@ -4,9 +4,9 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from phonenumber_field.modelfields import PhoneNumberField
-from datetime import datetime
+from datetime import datetime, date
 from location_field.models.plain import PlainLocationField
-
+from django.db.models import Max, Count, Avg
 
 # Create your models here.
 
@@ -16,6 +16,7 @@ class Messages(models.Model):
 	message = models.CharField(max_length = 1000)
 	datetime = models.DateTimeField(default = datetime.now)
 	status = models.CharField(max_length = 100)
+	conversation = models.CharField(max_length = 100)
 	
 	def CreateNewMessage(sendingUser, receivingUser, message):
 		sendingUser = User.objects.filter(username = sendingUser)[0]
@@ -23,7 +24,7 @@ class Messages(models.Model):
 		if sendingUser is None or receivingUser is None or message == "":
 			pass
 		else:
-			return Messages.objects.create(sendingUser = sendingUser, receivingUser = receivingUser, message = message,  status = "Pending_View")
+			return Messages.objects.create(sendingUser = sendingUser, receivingUser = receivingUser, message = message,  status = "Pending_View", conversation = str(min(sendingUser.id, receivingUser.id)) + "_" + str(max(sendingUser.id, receivingUser.id)))
 
 	def Get_Last_N_Messages(sendingUser, receivingUser, n):
 		unviewed = Messages.objects.filter(sendingUser__username = receivingUser, receivingUser__username = sendingUser, status = "Pending_View")
@@ -34,6 +35,12 @@ class Messages(models.Model):
 			returnSet = Messages.objects.filter(id__gte = unviewed.earliest('datetime').id, sendingUser__username = sendingUser, receivingUser__username = receivingUser).order_by('-datetime') | Messages.objects.filter(id__gte = unviewed.earliest('datetime').id, receivingUser__username = sendingUser, sendingUser__username = receivingUser).order_by('-datetime')
 			returnSet= returnSet[::-1]
 		return returnSet
+		
+	def get_list_of_users(username, all = False):
+		m = Messages.objects.filter(sendingUser__username = username) | Messages.objects.filter(receivingUser__username = username)
+		print(dir(m))
+		m = m.values('conversation').annotate(date = Max('datetime'), r_username = Max('receivingUser__username'), s_username = Max('sendingUser__username'), unread = Max('status'))
+		return m
 
 
 
@@ -148,12 +155,54 @@ class Tutor(models.Model):
 	Institution = models.CharField(max_length = 100)
 	Degree_Image = models.ImageField()
 	location = PlainLocationField(zoom=7)
+	hash = models.CharField(max_length = 100)
 	
 	def __str__(self):
 		return self.get_str()
 
 	def get_str(self):
 		return self.MyUser.get_str()
+		
+	def timming_match(self, times):
+		days = times[0]
+		t = times[1]
+		hours = 0
+		for i in range(len(days)):
+			sd = self.timming_set.filter(Day = days[i])
+			if len(sd) == 1:
+				dateTimeA = datetime.combine(date.today(), sd[0].TimeEnd)
+				dateTimeB = datetime.combine(date.today(), sd[0].TimeStart)
+				dateTimeDifference = dateTimeA - dateTimeB
+		
+				dateTimeA2 = datetime.combine(date.today(), t[2*i + 1])
+				dateTimeB2 = datetime.combine(date.today(), t[2*i])
+				dateTimeDifference2 = dateTimeA2 - dateTimeB2
+
+				minstart = min(sd[0].TimeStart, t[2*i])
+				maxstart = max(sd[0].TimeEnd, t[2*i+1])
+				
+				dateTimeA3 = datetime.combine(date.today(), maxstart)
+				dateTimeB3 = datetime.combine(date.today(), minstart)
+				dateTimeDifference3 = dateTimeA3 - dateTimeB3
+				
+				if dateTimeDifference + dateTimeDifference2 > dateTimeDifference3:
+					hours += (dateTimeDifference + dateTimeDifference2 - dateTimeDifference3).total_seconds() / 3600
+					if hours >= 4:
+						return True
+		return False
+		
+	def get_matching_tutors(hash, subject, times):
+		t = Tutor.objects.filter(hash = hash)
+		print(len(t), hash)
+		l = []
+		for i in t:
+			if len(i.tutorsubjects_set.filter(Subject = subject)) == 1 and i.timming_match(times):
+				l.append(i)
+		print(len(l))
+		return l
+				
+	def get_average_rating(self, tutor):
+		tutor.contracts_set.
 
 	
 class TutorSubjects(models.Model):
@@ -163,6 +212,7 @@ class TutorSubjects(models.Model):
 	def __str__(self):
 		return self.Tutor.get_str()
 
+	
 
 	
 class Timming(models.Model):
