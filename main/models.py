@@ -6,7 +6,7 @@ from django.dispatch import receiver
 from phonenumber_field.modelfields import PhoneNumberField
 from datetime import datetime, date
 from location_field.models.plain import PlainLocationField
-from django.db.models import Max, Count, Avg
+from django.db.models import Max, Count, Avg, Min
 
 # Create your models here.
 
@@ -39,7 +39,7 @@ class Messages(models.Model):
 	def get_list_of_users(username, all = False):
 		m = Messages.objects.filter(sendingUser__username = username) | Messages.objects.filter(receivingUser__username = username)
 		print(dir(m))
-		m = m.values('conversation').annotate(date = Max('datetime'), r_username = Max('receivingUser__username'), s_username = Max('sendingUser__username'), unread = Max('status'))
+		m = m.values('conversation').annotate(date = Max('datetime'), r_username = Max('receivingUser__username'), s_username = Min('sendingUser__username'), unread = Max('status'))
 		return m
 
 
